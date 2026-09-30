@@ -22,11 +22,11 @@
     <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, onSnapshot, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         window.FirebaseModule = {
-            initializeApp, getAuth, signInAnonymously, signInWithCustomToken, getFirestore, doc, onSnapshot, setDoc, updateDoc
+            initializeApp, getAuth, signInAnonymously, getFirestore, doc, onSnapshot, setDoc, updateDoc
         };
     </script>
 
@@ -77,7 +77,6 @@
             box-shadow: 0 0 20px rgba(225, 29, 72, 0.4);
         }
 
-        /* Custom Scrollbar */
         ::-webkit-scrollbar {
             width: 8px;
             height: 8px;
@@ -89,23 +88,11 @@
             background: rgba(244, 114, 182, 0.3);
             border-radius: 4px;
         }
-        ::-webkit-scrollbar-thumb:hover {
-            background: rgba(244, 114, 182, 0.6);
-        }
 
         @media print {
-            body * {
-                visibility: hidden;
-            }
-            #printableTicketArea, #printableTicketArea * {
-                visibility: visible;
-            }
-            #printableTicketArea {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-            }
+            body * { visibility: hidden; }
+            #printableTicketArea, #printableTicketArea * { visibility: visible; }
+            #printableTicketArea { position: absolute; left: 0; top: 0; width: 100%; }
         }
     </style>
 </head>
@@ -133,15 +120,16 @@
                         class="w-full text-center text-3xl font-mono tracking-widest py-3 px-4 bg-slate-900/80 border border-slate-700 rounded-2xl focus:ring-2 focus:ring-rose-500 focus:border-transparent outline-none text-rose-400 placeholder-slate-600">
                 </div>
                 <p id="pinError" class="text-xs text-rose-400 hidden font-medium flex items-center justify-center gap-1">
-                    <i data-lucide="alert-circle" class="w-4 h-4"></i> Incorrect Security PIN. Try default: 2026
+                    <i data-lucide="alert-circle" class="w-4 h-4"></i> Incorrect PIN.
                 </p>
                 <button type="submit" class="w-full py-3.5 px-6 rounded-2xl tropical-btn text-white font-bold tracking-wide shadow-lg flex items-center justify-center gap-2">
                     <i data-lucide="unlock" class="w-5 h-5"></i> Unlock System
                 </button>
             </form>
             
-            <div class="mt-6 pt-4 border-t border-slate-800 text-slate-500 text-xs">
-                Default PIN: <span class="text-amber-400 font-mono font-bold">2026</span> (Changeable in settings)
+            <div class="mt-6 pt-4 border-t border-slate-800 text-slate-500 text-xs text-left space-y-1">
+                <div>• Staff PIN: <span class="text-slate-300 font-mono font-bold" id="labelStaffPin">1234</span> (Sellers / Gate staff)</div>
+                <div>• Master Admin PIN: <span class="text-amber-400 font-mono font-bold" id="labelAdminPin">2026</span> (Owner / Admin)</div>
             </div>
         </div>
     </div>
@@ -155,24 +143,22 @@
                 </div>
                 <div>
                     <h2 class="text-lg font-bold leading-tight heading-font tropical-gradient-text">UNEB 2026 PARTY</h2>
-                    <p class="text-xs text-slate-400">Beyond The Exams • Ticket & Gate System</p>
+                    <p class="text-xs text-slate-400">Beyond The Exams • Ticket System</p>
                 </div>
             </div>
 
-            <!-- Sync Indicator & Quick Actions -->
             <div class="flex items-center gap-2 sm:gap-4 flex-wrap">
+                <span id="roleBadge" class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-slate-800 text-slate-300 border border-slate-700">
+                    Staff
+                </span>
+
                 <div id="syncStatusBadge" class="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                     <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
                     <span id="syncText">Local Only</span>
                 </div>
 
-                <button onclick="openHostingModal()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 flex items-center gap-1.5 transition">
-                    <i data-lucide="share-2" class="w-4 h-4 text-cyan-400"></i>
-                    <span>Share / Host</span>
-                </button>
-
-                <button onclick="openSettingsModal()" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition" title="Settings">
-                    <i data-lucide="settings" class="w-4 h-4"></i>
+                <button onclick="openSettingsModal()" class="admin-only p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition" title="Admin Settings">
+                    <i data-lucide="settings" class="w-4 h-4 text-amber-400"></i>
                 </button>
 
                 <button onclick="lockApp()" class="px-3 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 text-xs font-semibold border border-rose-500/30 flex items-center gap-1.5 transition">
@@ -192,48 +178,42 @@
                 <div class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Total Tickets</div>
                 <div class="text-2xl sm:text-3xl font-extrabold mt-1 text-white heading-font">150</div>
                 <div class="text-xs text-slate-400 mt-1">SN 0001 - SN 0150</div>
-                <i data-lucide="tickets" class="absolute -right-2 -bottom-2 w-16 h-16 text-slate-700/20"></i>
             </div>
 
             <div class="glass-card p-4 rounded-2xl relative overflow-hidden border-rose-500/20">
                 <div class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Tickets Sold</div>
                 <div id="statSold" class="text-2xl sm:text-3xl font-extrabold mt-1 text-rose-400 heading-font">0</div>
-                <div id="statRevenue" class="text-xs text-amber-400 mt-1 font-mono font-semibold">UGX 0</div>
-                <i data-lucide="shopping-bag" class="absolute -right-2 -bottom-2 w-16 h-16 text-rose-500/10"></i>
+                <div id="statRevenue" class="admin-only text-xs text-amber-400 mt-1 font-mono font-semibold">UGX 0</div>
             </div>
 
             <div class="glass-card p-4 rounded-2xl relative overflow-hidden border-emerald-500/20">
                 <div class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Checked-In</div>
                 <div id="statCheckedIn" class="text-2xl sm:text-3xl font-extrabold mt-1 text-emerald-400 heading-font">0</div>
                 <div id="statCheckPercent" class="text-xs text-emerald-300 mt-1 font-medium">0% Capacity</div>
-                <i data-lucide="user-check" class="absolute -right-2 -bottom-2 w-16 h-16 text-emerald-500/10"></i>
             </div>
 
             <div class="glass-card p-4 rounded-2xl relative overflow-hidden border-cyan-500/20">
                 <div class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Available</div>
                 <div id="statAvailable" class="text-2xl sm:text-3xl font-extrabold mt-1 text-cyan-400 heading-font">150</div>
                 <div class="text-xs text-cyan-300/80 mt-1 font-medium">UGX 30,000 / ticket</div>
-                <i data-lucide="ticket" class="absolute -right-2 -bottom-2 w-16 h-16 text-cyan-500/10"></i>
             </div>
         </div>
 
-        <!-- QUICK TOOLBAR & GATE SEARCH -->
+        <!-- TOOLBAR & GATE SEARCH -->
         <div class="glass-panel p-4 rounded-2xl flex flex-wrap items-center justify-between gap-4">
-            <!-- Search & Gate Quick Check -->
             <div class="flex-1 min-w-[280px] relative">
                 <i data-lucide="search" class="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                <input type="text" id="searchInput" oninput="handleSearch()" placeholder="Search Name, Phone, or Ticket SN (e.g., 0024)..." 
+                <input type="text" id="searchInput" oninput="handleSearch()" placeholder="Search Name, Phone, or Ticket SN..." 
                     class="w-full pl-11 pr-4 py-2.5 bg-slate-900/70 border border-slate-700/80 rounded-xl text-sm focus:ring-2 focus:ring-rose-500 outline-none placeholder-slate-500">
             </div>
 
-            <!-- Quick Action Buttons -->
             <div class="flex items-center gap-2 flex-wrap">
-                <button onclick="openGateDeskModal()" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-semibold text-xs flex items-center gap-2 shadow-lg shadow-emerald-900/30 transition">
+                <button onclick="openGateDeskModal()" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 text-white font-semibold text-xs flex items-center gap-2 shadow-lg transition">
                     <i data-lucide="qr-code" class="w-4 h-4"></i>
                     <span>Gate Check-In Desk</span>
                 </button>
 
-                <button onclick="exportCSV()" class="px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 flex items-center gap-1.5 transition">
+                <button onclick="exportCSV()" class="admin-only px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 flex items-center gap-1.5 transition">
                     <i data-lucide="download" class="w-4 h-4 text-amber-400"></i>
                     <span>Export CSV</span>
                 </button>
@@ -254,19 +234,7 @@
 
         <!-- TAB 1: 150-TICKET GRID MATRIX -->
         <div id="tabGrid" class="space-y-4">
-            <div class="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400 px-1">
-                <div>Click any ticket block to Sell, Check-In, or View details</div>
-                <div class="flex items-center gap-4">
-                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-md bg-slate-800 border border-slate-700"></span> Available</span>
-                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-md bg-amber-500/30 border border-amber-500"></span> Sold</span>
-                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-md bg-emerald-500/30 border border-emerald-500"></span> Checked-In</span>
-                </div>
-            </div>
-
-            <!-- 150 Grid Container -->
-            <div id="ticketGrid" class="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-15 gap-2">
-                <!-- Generated dynamically -->
-            </div>
+            <div id="ticketGrid" class="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-15 gap-2"></div>
         </div>
 
         <!-- TAB 2: ATTENDEE LIST TABLE -->
@@ -282,9 +250,7 @@
                             <th class="p-3.5 text-right">Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="attendeeTableBody" class="divide-y divide-slate-800/60">
-                        <!-- Populated dynamically -->
-                    </tbody>
+                    <tbody id="attendeeTableBody" class="divide-y divide-slate-800/60"></tbody>
                 </table>
             </div>
         </div>
@@ -307,35 +273,23 @@
 
             <form id="sellForm" onsubmit="handleSellSubmit(event)" class="space-y-4">
                 <input type="hidden" id="modalTicketIndex">
-                
                 <div>
                     <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Attendee Full Name *</label>
                     <input type="text" id="customerName" required placeholder="e.g., Alex Mukasa"
                         class="w-full py-2.5 px-3.5 bg-slate-900 border border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-rose-500 outline-none">
                 </div>
-
                 <div>
                     <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Phone Number *</label>
-                    <input type="tel" id="customerPhone" required placeholder="0770000000 or 0750000000"
+                    <input type="tel" id="customerPhone" required placeholder="0770000000"
                         class="w-full py-2.5 px-3.5 bg-slate-900 border border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-rose-500 outline-none">
                 </div>
-
-                <div class="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-300 flex items-center gap-2">
-                    <i data-lucide="info" class="w-4 h-4 shrink-0"></i>
-                    <span>Ticket Price: <strong>UGX 30,000</strong>. Serial allocation is tied directly to this ticket ID.</span>
-                </div>
-
                 <div class="flex items-center gap-2 pt-2">
                     <button type="submit" class="flex-1 py-3 rounded-xl tropical-btn text-white font-bold text-sm shadow-md flex items-center justify-center gap-2">
                         <i data-lucide="check-circle" class="w-4 h-4"></i> Confirm Sale
                     </button>
-                    <button type="button" onclick="closeModal('ticketModal')" class="py-3 px-4 rounded-xl bg-slate-800 text-slate-300 text-sm font-semibold hover:bg-slate-700">
-                        Cancel
-                    </button>
                 </div>
             </form>
 
-            <!-- Active Ticket Info view (when already sold) -->
             <div id="soldTicketView" class="hidden space-y-4">
                 <div class="p-4 bg-slate-900/80 rounded-2xl border border-slate-800 space-y-2">
                     <div class="flex justify-between text-xs text-slate-400">
@@ -357,9 +311,9 @@
                         <i data-lucide="user-check" class="w-4 h-4"></i> Check-In Gate
                     </button>
                     <button onclick="printSelectedTicket()" class="py-2.5 px-4 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition">
-                        <i data-lucide="printer" class="w-4 h-4"></i> Print Ticket Card
+                        <i data-lucide="printer" class="w-4 h-4"></i> Print Pass
                     </button>
-                    <button onclick="voidTicket()" class="py-2.5 px-3 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 font-bold text-xs">
+                    <button onclick="voidTicket()" class="admin-only py-2.5 px-3 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 font-bold text-xs">
                         Void / Reset
                     </button>
                 </div>
@@ -373,63 +327,26 @@
             <button onclick="closeModal('printModal')" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1">
                 <i data-lucide="x" class="w-5 h-5"></i>
             </button>
-
-            <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                <i data-lucide="printer" class="w-5 h-5 text-amber-400"></i> Printable Ticket Pass Card
-            </h3>
-
-            <!-- PRINTABLE CARD CONTAINER -->
-            <div id="printableTicketArea" class="p-6 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 rounded-2xl border-2 border-rose-500/40 text-white relative overflow-hidden shadow-2xl">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-slate-700">
+            <div id="printableTicketArea" class="p-6 bg-slate-900 rounded-2xl border-2 border-rose-500/40 text-white">
+                <div class="flex justify-between items-center pb-4 border-b border-slate-700">
                     <div>
-                        <div class="text-xs font-extrabold uppercase tracking-widest text-amber-400">OFFICIAL ACCESS PASS</div>
                         <h2 class="text-2xl font-black heading-font tropical-gradient-text">BEYOND THE EXAMS</h2>
-                        <p class="text-xs text-slate-300 font-medium">UNEB 2026 Celebration Party</p>
+                        <p class="text-xs text-slate-300">UNEB 2026 Celebration Party</p>
                     </div>
-                    <div class="text-right">
-                        <div class="text-xs text-slate-400">SERIAL NUMBER</div>
-                        <div id="printSN" class="text-xl font-mono font-black text-rose-400">SN 0001</div>
-                    </div>
+                    <div id="printSN" class="text-xl font-mono font-black text-rose-400">SN 0001</div>
                 </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 my-4">
-                    <div class="sm:col-span-2 space-y-2">
-                        <div>
-                            <div class="text-[10px] text-slate-400 uppercase">Attendee Name</div>
-                            <div id="printName" class="text-lg font-bold text-white">Alex Mukasa</div>
-                        </div>
-                        <div class="grid grid-cols-2 gap-2 text-xs">
-                            <div>
-                                <span class="text-slate-400 block text-[10px] uppercase">Phone</span>
-                                <span id="printPhone" class="font-mono text-slate-200">0770000000</span>
-                            </div>
-                            <div>
-                                <span class="text-slate-400 block text-[10px] uppercase">Ticket Price</span>
-                                <span class="font-bold text-amber-400">UGX 30,000</span>
-                            </div>
-                        </div>
-                        <div class="text-[11px] text-slate-400 pt-1">
-                            📍 Venue: Main Party Grounds • 🕒 Gate Opens: 4:00 PM
-                        </div>
+                <div class="grid grid-cols-3 gap-4 my-4">
+                    <div class="col-span-2 space-y-2">
+                        <div><div class="text-[10px] text-slate-400">Attendee</div><div id="printName" class="text-lg font-bold">Alex</div></div>
+                        <div><div class="text-[10px] text-slate-400">Phone</div><div id="printPhone" class="font-mono">0770000000</div></div>
                     </div>
-
-                    <!-- QR CODE -->
                     <div class="flex flex-col items-center justify-center p-2 bg-white rounded-xl">
                         <div id="qrcodeCanvas"></div>
-                        <div class="text-[9px] text-slate-800 font-mono mt-1 font-bold">SCAN AT GATE</div>
                     </div>
                 </div>
-
-                <div class="pt-3 border-t border-dashed border-slate-700 flex justify-between items-center text-[10px] text-slate-400">
-                    <span>Non-transferable without registration updates.</span>
-                    <span class="font-mono">VALID FOR 1 SINGLE ENTRY</span>
-                </div>
             </div>
-
             <div class="flex justify-end gap-3 mt-6">
-                <button onclick="window.print()" class="py-2.5 px-6 rounded-xl tropical-btn text-white font-bold text-xs flex items-center gap-2 shadow-lg">
-                    <i data-lucide="printer" class="w-4 h-4"></i> Print / Save PDF
-                </button>
+                <button onclick="window.print()" class="py-2.5 px-6 rounded-xl tropical-btn text-white font-bold text-xs">Print</button>
             </div>
         </div>
     </div>
@@ -440,37 +357,19 @@
             <button onclick="closeModal('gateDeskModal')" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1">
                 <i data-lucide="x" class="w-5 h-5"></i>
             </button>
-
-            <div class="flex items-center gap-3 mb-4">
-                <div class="p-2 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                    <i data-lucide="user-check" class="w-6 h-6"></i>
-                </div>
-                <div>
-                    <h3 class="text-xl font-bold heading-font text-white">Gate Verification Desk</h3>
-                    <p class="text-xs text-slate-400">Instant check-in by serial number input</p>
-                </div>
-            </div>
-
+            <h3 class="text-xl font-bold heading-font text-white mb-4">Gate Check-In</h3>
             <div class="space-y-4">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Enter Ticket Serial Number</label>
-                    <div class="flex gap-2">
-                        <input type="number" id="gateSerialInput" placeholder="e.g., 24 or 0024" min="1" max="150"
-                            class="flex-1 py-3 px-4 bg-slate-900 border border-slate-700 rounded-xl text-lg font-mono font-bold focus:ring-2 focus:ring-emerald-500 outline-none text-emerald-400">
-                        <button onclick="processGateCheckIn()" class="px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm shadow-md">
-                            Verify Gate
-                        </button>
-                    </div>
+                <div class="flex gap-2">
+                    <input type="number" id="gateSerialInput" placeholder="Serial No. (1-150)" min="1" max="150"
+                        class="flex-1 py-3 px-4 bg-slate-900 border border-slate-700 rounded-xl text-lg font-mono font-bold focus:ring-2 focus:ring-emerald-500 text-emerald-400">
+                    <button onclick="processGateCheckIn()" class="px-6 py-3 rounded-xl bg-emerald-600 text-white font-bold text-sm">Verify</button>
                 </div>
-
-                <div id="gateFeedback" class="p-4 rounded-2xl hidden transition-all text-center">
-                    <!-- Dynamic feedback display -->
-                </div>
+                <div id="gateFeedback" class="p-4 rounded-2xl hidden text-center"></div>
             </div>
         </div>
     </div>
 
-    <!-- SETTINGS MODAL -->
+    <!-- ADMIN SETTINGS MODAL -->
     <div id="settingsModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md hidden">
         <div class="glass-panel w-full max-w-lg p-6 rounded-3xl border border-slate-700 shadow-2xl relative">
             <button onclick="closeModal('settingsModal')" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1">
@@ -478,113 +377,48 @@
             </button>
 
             <h3 class="text-xl font-bold heading-font text-white mb-4 flex items-center gap-2">
-                <i data-lucide="shield-check" class="w-5 h-5 text-rose-400"></i> System & Security Settings
+                <i data-lucide="shield-check" class="w-5 h-5 text-rose-400"></i> Admin Controls
             </h3>
 
             <div class="space-y-6">
-                <!-- Change Security PIN -->
+                <!-- Change Security PINs -->
                 <div class="p-4 bg-slate-900/80 rounded-2xl border border-slate-800 space-y-3">
                     <h4 class="text-sm font-bold text-white flex items-center gap-2">
-                        <i data-lucide="key" class="w-4 h-4 text-amber-400"></i> Security Access PIN
+                        <i data-lucide="key" class="w-4 h-4 text-amber-400"></i> Passcode Management
                     </h4>
                     <div>
-                        <label class="block text-xs text-slate-400 mb-1">New Security PIN</label>
-                        <div class="flex gap-2">
-                            <input type="password" id="newPinInput" placeholder="Enter new PIN"
-                                class="flex-1 py-2 px-3 bg-slate-950 border border-slate-700 rounded-xl text-sm font-mono focus:ring-2 focus:ring-rose-500 outline-none">
-                            <button onclick="updateSecurityPin()" class="py-2 px-4 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl border border-slate-700">
-                                Save PIN
-                            </button>
-                        </div>
+                        <label class="block text-xs text-slate-400 mb-1">Staff Access PIN (Sellers)</label>
+                        <input type="password" id="newStaffPinInput" placeholder="New Staff PIN"
+                            class="w-full py-2 px-3 bg-slate-950 border border-slate-700 rounded-xl text-sm font-mono focus:ring-2 focus:ring-rose-500 outline-none mb-3">
+                        
+                        <label class="block text-xs text-slate-400 mb-1">Master Admin PIN (Owner)</label>
+                        <input type="password" id="newAdminPinInput" placeholder="New Admin PIN"
+                            class="w-full py-2 px-3 bg-slate-950 border border-slate-700 rounded-xl text-sm font-mono focus:ring-2 focus:ring-rose-500 outline-none mb-3">
+
+                        <button onclick="updateSecurityPins()" class="w-full py-2.5 px-4 bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold rounded-xl">
+                            Save Security PINs
+                        </button>
                     </div>
                 </div>
 
-                <!-- Live Cloud Sync Room Key -->
+                <!-- Sync Room -->
                 <div class="p-4 bg-slate-900/80 rounded-2xl border border-slate-800 space-y-3">
                     <h4 class="text-sm font-bold text-white flex items-center gap-2">
-                        <i data-lucide="cloud-lightning" class="w-4 h-4 text-cyan-400"></i> Multi-Device Cloud Sync Room
+                        <i data-lucide="cloud-lightning" class="w-4 h-4 text-cyan-400"></i> Shared Sync Room Key
                     </h4>
-                    <p class="text-xs text-slate-400">Share this Sync Room Key across multiple devices so all phones and gate laptops update live together.</p>
-                    <div>
-                        <label class="block text-xs text-slate-400 mb-1">Sync Room Key</label>
-                        <div class="flex gap-2">
-                            <input type="text" id="syncRoomInput" value="BEYOND2026"
-                                class="flex-1 py-2 px-3 bg-slate-950 border border-slate-700 rounded-xl text-sm font-mono uppercase focus:ring-2 focus:ring-cyan-500 outline-none text-cyan-400">
-                            <button onclick="updateSyncRoom()" class="py-2 px-4 bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold rounded-xl">
-                                Connect Room
-                            </button>
-                        </div>
+                    <div class="flex gap-2">
+                        <input type="text" id="syncRoomInput" value="BEYOND2026"
+                            class="flex-1 py-2 px-3 bg-slate-950 border border-slate-700 rounded-xl text-sm font-mono uppercase text-cyan-400">
+                        <button onclick="updateSyncRoom()" class="py-2 px-4 bg-cyan-600 text-white text-xs font-bold rounded-xl">Update</button>
                     </div>
                 </div>
 
-                <!-- Backup & Reset -->
+                <!-- Danger Zone -->
                 <div class="p-4 bg-slate-900/80 rounded-2xl border border-slate-800 space-y-3">
-                    <h4 class="text-sm font-bold text-rose-400 flex items-center gap-2">
-                        <i data-lucide="database" class="w-4 h-4"></i> Danger Zone
-                    </h4>
-                    <button onclick="resetAllTickets()" class="w-full py-2.5 px-4 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 font-bold text-xs rounded-xl border border-rose-500/30">
-                        Reset All 150 Tickets (Clear All Sales)
+                    <h4 class="text-sm font-bold text-rose-400">Danger Zone</h4>
+                    <button onclick="resetAllTickets()" class="w-full py-2.5 px-4 bg-rose-500/20 text-rose-300 font-bold text-xs rounded-xl border border-rose-500/30">
+                        Reset All 150 Tickets
                     </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- HOSTING & SHARING GUIDE MODAL -->
-    <div id="hostingModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md hidden">
-        <div class="glass-panel w-full max-w-2xl p-6 rounded-3xl border border-cyan-500/30 shadow-2xl relative max-h-[90vh] overflow-y-auto">
-            <button onclick="closeModal('hostingModal')" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1">
-                <i data-lucide="x" class="w-5 h-5"></i>
-            </button>
-
-            <div class="flex items-center gap-3 mb-4">
-                <div class="p-2 rounded-xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
-                    <i data-lucide="globe" class="w-6 h-6"></i>
-                </div>
-                <div>
-                    <h3 class="text-xl font-bold heading-font text-white">Create a Shareable Link for Easy Access</h3>
-                    <p class="text-xs text-slate-400">Publish this app online for free in under 60 seconds</p>
-                </div>
-            </div>
-
-            <div class="space-y-4 text-xs sm:text-sm text-slate-300">
-                <p>To share this app across all organizers' phones and gate staff without needing to send raw files every time, host it online for free using one of these platforms:</p>
-
-                <!-- Platform 1: Netlify Drop -->
-                <div class="p-4 bg-slate-900/80 rounded-2xl border border-slate-800 space-y-2">
-                    <div class="flex justify-between items-center">
-                        <h4 class="font-bold text-white text-base text-rose-400">Method 1: Netlify Drop (Easiest - 30 Secs)</h4>
-                        <a href="https://app.netlify.com/drop" target="_blank" class="px-3 py-1 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs flex items-center gap-1">
-                            Visit Netlify Drop <i data-lucide="external-link" class="w-3 h-3"></i>
-                        </a>
-                    </div>
-                    <ol class="list-decimal list-inside space-y-1 text-slate-400 text-xs">
-                        <li>Save this file on your computer as <code class="text-amber-400 font-mono">index.html</code> inside a folder (e.g. named <code class="text-slate-200">uneb-party</code>).</li>
-                        <li>Open <a href="https://app.netlify.com/drop" target="_blank" class="text-cyan-400 underline">app.netlify.com/drop</a> in your web browser.</li>
-                        <li>Drag and drop the folder into the box on the Netlify screen.</li>
-                        <li>Netlify will instantly generate a free live web link (e.g., <code class="text-emerald-400 font-mono">https://uneb2026.netlify.app</code>) to share with your team!</li>
-                    </ol>
-                </div>
-
-                <!-- Platform 2: Tiiny Host -->
-                <div class="p-4 bg-slate-900/80 rounded-2xl border border-slate-800 space-y-2">
-                    <div class="flex justify-between items-center">
-                        <h4 class="font-bold text-white text-base text-amber-400">Method 2: Tiiny Host (No Account Required)</h4>
-                        <a href="https://tiiny.host" target="_blank" class="px-3 py-1 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs flex items-center gap-1">
-                            Visit Tiiny Host <i data-lucide="external-link" class="w-3 h-3"></i>
-                        </a>
-                    </div>
-                    <ol class="list-decimal list-inside space-y-1 text-slate-400 text-xs">
-                        <li>Go to <a href="https://tiiny.host" target="_blank" class="text-cyan-400 underline">tiiny.host</a>.</li>
-                        <li>Upload this <code class="text-amber-400 font-mono">index.html</code> file directly.</li>
-                        <li>Type your preferred link name (e.g. <code class="text-slate-200">uneb2026party</code>) and click Publish.</li>
-                    </ol>
-                </div>
-
-                <!-- Platform 3: GitHub Pages -->
-                <div class="p-4 bg-slate-900/80 rounded-2xl border border-slate-800 space-y-2">
-                    <h4 class="font-bold text-white text-base text-cyan-400">Method 3: GitHub Pages (Permanent & Custom Domain)</h4>
-                    <p class="text-xs text-slate-400">Create a free GitHub repository, upload <code class="text-amber-400 font-mono">index.html</code>, and enable Pages under Repository Settings -> Pages.</p>
                 </div>
             </div>
         </div>
@@ -594,56 +428,24 @@
         const TOTAL_TICKETS = 150;
         const TICKET_PRICE = 30000;
         
-        // Default Local Storage Keys
-        const STORAGE_PIN_KEY = 'uneb2026_pin';
+        const STORAGE_ADMIN_PIN = 'uneb2026_admin_pin';
+        const STORAGE_STAFF_PIN = 'uneb2026_staff_pin';
         const STORAGE_TICKETS_KEY = 'uneb2026_tickets';
         const STORAGE_ROOM_KEY = 'uneb2026_room';
 
-        // State Data
-        let appPin = localStorage.getItem(STORAGE_PIN_KEY) || '2026';
+        let adminPin = localStorage.getItem(STORAGE_ADMIN_PIN) || '2026';
+        let staffPin = localStorage.getItem(STORAGE_STAFF_PIN) || '1234';
         let syncRoom = localStorage.getItem(STORAGE_ROOM_KEY) || 'BEYOND2026';
+        
+        let currentRole = null; // 'admin' or 'staff'
         let tickets = [];
         let selectedIndex = null;
         let db = null;
-        let auth = null;
-
-        // Initialize Audio Synthesizer for gate beeps
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
-        function playBeep(type) {
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-
-            if (type === 'success') {
-                osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
-                osc.frequency.setValueAtTime(880, audioCtx.currentTime + 0.1); // A5
-                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
-                osc.start();
-                osc.stop(audioCtx.currentTime + 0.3);
-            } else {
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(150, audioCtx.currentTime);
-                gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
-                osc.start();
-                osc.stop(audioCtx.currentTime + 0.4);
-            }
-        }
 
         function initTickets() {
             const saved = localStorage.getItem(STORAGE_TICKETS_KEY);
             if (saved) {
-                try {
-                    tickets = JSON.parse(saved);
-                } catch(e) {
-                    tickets = createEmptyTickets();
-                }
+                try { tickets = JSON.parse(saved); } catch(e) { tickets = createEmptyTickets(); }
             } else {
                 tickets = createEmptyTickets();
             }
@@ -652,11 +454,10 @@
         function createEmptyTickets() {
             const arr = [];
             for (let i = 1; i <= TOTAL_TICKETS; i++) {
-                const sn = 'SN ' + String(i).padStart(4, '0');
                 arr.push({
                     id: i,
-                    sn: sn,
-                    status: 'available', // available | sold | checked-in
+                    sn: 'SN ' + String(i).padStart(4, '0'),
+                    status: 'available',
                     customerName: '',
                     customerPhone: '',
                     soldAt: null,
@@ -668,34 +469,20 @@
 
         function saveTicketsLocally() {
             localStorage.setItem(STORAGE_TICKETS_KEY, JSON.stringify(tickets));
-            if (db) pushToCloud();
             renderDashboard();
         }
 
         async function initFirebaseSync() {
             if (!window.FirebaseModule) return;
-            const { initializeApp, getAuth, signInAnonymously, signInWithCustomToken, getFirestore, doc, onSnapshot, setDoc } = window.FirebaseModule;
-
-            // Optional custom Firebase config injection if available
-            const appId = typeof __app_id !== 'undefined' ? __app_id : 'uneb-2026-app';
-            const firebaseConfig = typeof __firebase_config !== 'undefined' 
-                ? JSON.parse(__firebase_config) 
-                : { apiKey: "demo", authDomain: "demo.firebaseapp.com", projectId: "demo-app" };
+            const { initializeApp, getAuth, signInAnonymously, getFirestore, doc, onSnapshot } = window.FirebaseModule;
 
             try {
-                const app = initializeApp(firebaseConfig);
-                auth = getAuth(app);
+                const app = initializeApp({ apiKey: "demo", authDomain: "demo.firebaseapp.com", projectId: "demo-app" });
+                const auth = getAuth(app);
                 db = getFirestore(app);
+                await signInAnonymously(auth);
 
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-
-                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'party_rooms', syncRoom);
-                
-                // Realtime Listener
+                const docRef = doc(db, 'party_rooms', syncRoom);
                 onSnapshot(docRef, (docSnap) => {
                     if (docSnap.exists()) {
                         const data = docSnap.data();
@@ -708,13 +495,20 @@
                     } else {
                         pushToCloud();
                     }
-                }, (error) => {
-                    console.log("Sync notice:", error.message);
-                    updateSyncBadge(false);
                 });
-
             } catch(e) {
-                console.log("Offline mode active.");
+                updateSyncBadge(false);
+            }
+        }
+
+        async function pushTicketToCloud(singleTicket) {
+            if (!db) return;
+            const { doc, setDoc } = window.FirebaseModule;
+            try {
+                const docRef = doc(db, 'party_rooms', syncRoom);
+                await setDoc(docRef, { tickets }, { merge: true });
+                updateSyncBadge(true);
+            } catch(e) {
                 updateSyncBadge(false);
             }
         }
@@ -722,10 +516,9 @@
         async function pushToCloud() {
             if (!db) return;
             const { doc, setDoc } = window.FirebaseModule;
-            const appId = typeof __app_id !== 'undefined' ? __app_id : 'uneb-2026-app';
             try {
-                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'party_rooms', syncRoom);
-                await setDoc(docRef, { tickets, lastUpdated: new Date().toISOString() }, { merge: true });
+                const docRef = doc(db, 'party_rooms', syncRoom);
+                await setDoc(docRef, { tickets }, { merge: true });
                 updateSyncBadge(true);
             } catch(e) {
                 updateSyncBadge(false);
@@ -749,25 +542,42 @@
             const entered = document.getElementById('pinInput').value;
             const pinError = document.getElementById('pinError');
 
-            if (entered === appPin) {
-                pinError.classList.add('hidden');
-                document.getElementById('securityGate').classList.add('opacity-0', 'pointer-events-none');
-                setTimeout(() => {
-                    document.getElementById('securityGate').classList.add('hidden');
-                }, 300);
+            if (entered === adminPin) {
+                currentRole = 'admin';
+                unlockApp();
+            } else if (entered === staffPin) {
+                currentRole = 'staff';
+                unlockApp();
             } else {
                 pinError.classList.remove('hidden');
-                playBeep('alert');
             }
         }
 
+        function unlockApp() {
+            document.getElementById('pinError').classList.add('hidden');
+            const gate = document.getElementById('securityGate');
+            gate.classList.add('opacity-0', 'pointer-events-none');
+            setTimeout(() => gate.classList.add('hidden'), 300);
+
+            const badge = document.getElementById('roleBadge');
+            if (currentRole === 'admin') {
+                badge.innerText = "Admin Access";
+                badge.className = "px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-rose-500/20 text-rose-300 border border-rose-500/30";
+                document.querySelectorAll('.admin-only').forEach(el => el.style.display = '');
+            } else {
+                badge.innerText = "Staff Access";
+                badge.className = "px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-cyan-500/20 text-cyan-300 border border-cyan-500/30";
+                document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
+            }
+            renderDashboard();
+        }
+
         function lockApp() {
+            currentRole = null;
             const gate = document.getElementById('securityGate');
             document.getElementById('pinInput').value = '';
             gate.classList.remove('hidden');
-            setTimeout(() => {
-                gate.classList.remove('opacity-0', 'pointer-events-none');
-            }, 10);
+            setTimeout(() => gate.classList.remove('opacity-0', 'pointer-events-none'), 10);
         }
 
         function renderDashboard() {
@@ -776,7 +586,6 @@
 
             const gridContainer = document.getElementById('ticketGrid');
             const tableBody = document.getElementById('attendeeTableBody');
-
             gridContainer.innerHTML = '';
             tableBody.innerHTML = '';
 
@@ -784,12 +593,8 @@
 
             tickets.forEach((t, index) => {
                 if (t.status === 'sold') soldCount++;
-                if (t.status === 'checked-in') {
-                    soldCount++;
-                    checkCount++;
-                }
+                if (t.status === 'checked-in') { soldCount++; checkCount++; }
 
-                // Filtering check
                 const matches = !filterQuery || 
                     t.sn.toLowerCase().includes(filterQuery) || 
                     (t.customerName && t.customerName.toLowerCase().includes(filterQuery)) || 
@@ -797,58 +602,32 @@
 
                 if (!matches) return;
 
-                // Render Grid Block
                 const btn = document.createElement('button');
                 let statusClasses = "bg-slate-900/60 border-slate-800 text-slate-400 hover:border-slate-600";
-                
-                if (t.status === 'sold') {
-                    statusClasses = "bg-amber-500/20 border-amber-500/50 text-amber-300 font-bold hover:bg-amber-500/30";
-                } else if (t.status === 'checked-in') {
-                    statusClasses = "bg-emerald-500/20 border-emerald-500/50 text-emerald-300 font-bold hover:bg-emerald-500/30";
-                }
+                if (t.status === 'sold') statusClasses = "bg-amber-500/20 border-amber-500/50 text-amber-300 font-bold";
+                else if (t.status === 'checked-in') statusClasses = "bg-emerald-500/20 border-emerald-500/50 text-emerald-300 font-bold";
 
                 btn.className = `p-2.5 rounded-xl border text-center transition-all flex flex-col items-center justify-center gap-1 ${statusClasses}`;
                 btn.onclick = () => openTicketModal(index);
-                btn.innerHTML = `
-                    <span class="text-[10px] font-mono opacity-70">${t.sn}</span>
-                    <i data-lucide="${t.status === 'checked-in' ? 'user-check' : t.status === 'sold' ? 'user-x' : 'ticket'}" class="w-4 h-4"></i>
-                `;
+                btn.innerHTML = `<span class="text-[10px] font-mono opacity-70">${t.sn}</span><i data-lucide="${t.status === 'checked-in' ? 'user-check' : t.status === 'sold' ? 'user-x' : 'ticket'}" class="w-4 h-4"></i>`;
                 gridContainer.appendChild(btn);
 
-                // Render Table Row
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-slate-800/40 transition";
                 tr.innerHTML = `
                     <td class="p-3.5 font-mono font-bold text-rose-400">${t.sn}</td>
                     <td class="p-3.5 font-semibold text-white">${t.customerName || '<span class="text-slate-600 font-normal">Unsold</span>'}</td>
                     <td class="p-3.5 font-mono text-slate-400">${t.customerPhone || '-'}</td>
-                    <td class="p-3.5">
-                        <span class="px-2.5 py-1 rounded-full text-[11px] font-bold ${
-                            t.status === 'checked-in' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
-                            t.status === 'sold' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
-                            'bg-slate-800 text-slate-400 border border-slate-700'
-                        }">
-                            ${t.status.toUpperCase()}
-                        </span>
-                    </td>
-                    <td class="p-3.5 text-right">
-                        <button onclick="openTicketModal(${index})" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300">
-                            Manage
-                        </button>
-                    </td>
+                    <td class="p-3.5"><span class="px-2.5 py-1 rounded-full text-[11px] font-bold ${t.status === 'checked-in' ? 'bg-emerald-500/20 text-emerald-400' : t.status === 'sold' ? 'bg-amber-500/20 text-amber-400' : 'bg-slate-800 text-slate-400'}">${t.status.toUpperCase()}</span></td>
+                    <td class="p-3.5 text-right"><button onclick="openTicketModal(${index})" class="px-2.5 py-1 rounded-lg bg-slate-800 text-xs font-semibold text-slate-300">Manage</button></td>
                 `;
                 tableBody.appendChild(tr);
             });
 
-            // Update Header Stats
             document.getElementById('statSold').innerText = soldCount;
             document.getElementById('statRevenue').innerText = `UGX ${(soldCount * TICKET_PRICE).toLocaleString()}`;
             document.getElementById('statCheckedIn').innerText = checkCount;
             document.getElementById('statAvailable').innerText = TOTAL_TICKETS - soldCount;
-
-            const checkPercent = soldCount > 0 ? Math.round((checkCount / soldCount) * 100) : 0;
-            document.getElementById('statCheckPercent').innerText = `${checkPercent}% Check-in rate`;
-
             lucide.createIcons();
         }
 
@@ -872,20 +651,13 @@
                 document.getElementById('modalTitle').innerText = "Ticket Details";
                 sellForm.classList.add('hidden');
                 soldView.classList.remove('hidden');
-
                 document.getElementById('viewCustomerName').innerText = t.customerName;
                 document.getElementById('viewCustomerPhone').innerText = t.customerPhone;
 
                 const badge = document.getElementById('viewStatusBadge');
-                if (t.status === 'checked-in') {
-                    badge.className = "px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
-                    badge.innerText = "CHECKED-IN";
-                } else {
-                    badge.className = "px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30";
-                    badge.innerText = "SOLD (NOT ENTRY YET)";
-                }
+                badge.className = t.status === 'checked-in' ? "px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-400" : "px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-400";
+                badge.innerText = t.status === 'checked-in' ? "CHECKED-IN" : "SOLD";
             }
-
             document.getElementById('ticketModal').classList.remove('hidden');
         }
 
@@ -893,16 +665,13 @@
             e.preventDefault();
             if (selectedIndex === null) return;
 
-            const name = document.getElementById('customerName').value.trim();
-            const phone = document.getElementById('customerPhone').value.trim();
-
-            tickets[selectedIndex].customerName = name;
-            tickets[selectedIndex].customerPhone = phone;
+            tickets[selectedIndex].customerName = document.getElementById('customerName').value.trim();
+            tickets[selectedIndex].customerPhone = document.getElementById('customerPhone').value.trim();
             tickets[selectedIndex].status = 'sold';
             tickets[selectedIndex].soldAt = new Date().toISOString();
 
             saveTicketsLocally();
-            playBeep('success');
+            pushTicketToCloud(tickets[selectedIndex]);
             closeModal('ticketModal');
         }
 
@@ -913,136 +682,60 @@
             t.checkedInAt = t.status === 'checked-in' ? new Date().toISOString() : null;
 
             saveTicketsLocally();
-            playBeep('success');
+            pushTicketToCloud(t);
             openTicketModal(selectedIndex);
         }
 
         function voidTicket() {
             if (selectedIndex === null) return;
-            if (confirm(`Are you sure you want to void ${tickets[selectedIndex].sn}? This clears customer info.`)) {
-                tickets[selectedIndex] = {
-                    id: tickets[selectedIndex].id,
-                    sn: tickets[selectedIndex].sn,
-                    status: 'available',
-                    customerName: '',
-                    customerPhone: '',
-                    soldAt: null,
-                    checkedInAt: null
-                };
+            if (confirm(`Void ticket ${tickets[selectedIndex].sn}?`)) {
+                tickets[selectedIndex] = { id: tickets[selectedIndex].id, sn: tickets[selectedIndex].sn, status: 'available', customerName: '', customerPhone: '', soldAt: null, checkedInAt: null };
                 saveTicketsLocally();
+                pushToCloud();
                 closeModal('ticketModal');
             }
         }
 
-        function printSelectedTicket() {
-            if (selectedIndex === null) return;
-            const t = tickets[selectedIndex];
-
-            document.getElementById('printSN').innerText = t.sn;
-            document.getElementById('printName').innerText = t.customerName;
-            document.getElementById('printPhone').innerText = t.customerPhone;
-
-            // Generate QR Code
-            const qrContainer = document.getElementById('qrcodeCanvas');
-            qrContainer.innerHTML = '';
-            new QRCode(qrContainer, {
-                text: `UNEB2026-${t.sn}-${t.customerPhone}`,
-                width: 90,
-                height: 90,
-                colorDark: "#0f172a",
-                colorLight: "#ffffff",
-                correctLevel: QRCode.CorrectLevel.H
-            });
-
-            closeModal('ticketModal');
-            document.getElementById('printModal').classList.remove('hidden');
-        }
-
-        function openGateDeskModal() {
-            document.getElementById('gateSerialInput').value = '';
-            document.getElementById('gateFeedback').className = "p-4 rounded-2xl hidden text-center";
-            document.getElementById('gateDeskModal').classList.remove('hidden');
-        }
-
         function processGateCheckIn() {
-            const val = document.getElementById('gateSerialInput').value;
-            const num = parseInt(val, 10);
+            const num = parseInt(document.getElementById('gateSerialInput').value, 10);
             const feedback = document.getElementById('gateFeedback');
 
             if (isNaN(num) || num < 1 || num > TOTAL_TICKETS) {
-                feedback.className = "p-4 rounded-2xl bg-rose-500/20 text-rose-300 border border-rose-500/30 text-center font-bold text-sm block";
-                feedback.innerText = "❌ Invalid Ticket SN! Must be between 1 and 150.";
-                playBeep('alert');
+                feedback.className = "p-4 rounded-2xl bg-rose-500/20 text-rose-300 font-bold text-sm block";
+                feedback.innerText = "❌ Invalid SN!";
                 return;
             }
 
             const target = tickets.find(t => t.id === num);
-            if (!target) return;
-
             if (target.status === 'available') {
-                feedback.className = "p-4 rounded-2xl bg-rose-500/20 text-rose-300 border border-rose-500/30 text-center font-bold text-sm block";
-                feedback.innerText = `❌ Ticket ${target.sn} is UNSOLD! Cannot check-in.`;
-                playBeep('alert');
+                feedback.className = "p-4 rounded-2xl bg-rose-500/20 text-rose-300 font-bold text-sm block";
+                feedback.innerText = `❌ Ticket ${target.sn} is UNSOLD!`;
             } else if (target.status === 'checked-in') {
-                feedback.className = "p-4 rounded-2xl bg-amber-500/20 text-amber-300 border border-amber-500/30 text-center font-bold text-sm block";
-                feedback.innerText = `⚠️ ALREADY CHECKED-IN! ${target.sn} (${target.customerName})`;
-                playBeep('alert');
+                feedback.className = "p-4 rounded-2xl bg-amber-500/20 text-amber-300 font-bold text-sm block";
+                feedback.innerText = `⚠️ ALREADY CHECKED-IN! (${target.customerName})`;
             } else {
                 target.status = 'checked-in';
                 target.checkedInAt = new Date().toISOString();
                 saveTicketsLocally();
-                playBeep('success');
+                pushTicketToCloud(target);
 
-                feedback.className = "p-4 rounded-2xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-center font-bold text-sm block";
-                feedback.innerText = `✅ GATE ENTRY APPROVED! Welcome ${target.customerName} (${target.sn})`;
+                feedback.className = "p-4 rounded-2xl bg-emerald-500/20 text-emerald-300 font-bold text-sm block";
+                feedback.innerText = `✅ ENTRY APPROVED! Welcome ${target.customerName}`;
             }
         }
 
-        function switchTab(tab) {
-            const gridBtn = document.getElementById('tabGridBtn');
-            const listBtn = document.getElementById('tabListBtn');
-            const gridDiv = document.getElementById('tabGrid');
-            const listDiv = document.getElementById('tabList');
+        function updateSecurityPins() {
+            const newStaff = document.getElementById('newStaffPinInput').value.trim();
+            const newAdmin = document.getElementById('newAdminPinInput').value.trim();
 
-            if (tab === 'grid') {
-                gridBtn.className = "py-2.5 border-b-2 border-rose-500 text-rose-400 flex items-center gap-2";
-                listBtn.className = "py-2.5 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2";
-                gridDiv.classList.remove('hidden');
-                listDiv.classList.add('hidden');
-            } else {
-                listBtn.className = "py-2.5 border-b-2 border-rose-500 text-rose-400 flex items-center gap-2";
-                gridBtn.className = "py-2.5 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2";
-                listDiv.classList.remove('hidden');
-                gridDiv.classList.add('hidden');
-            }
-        }
+            if (newStaff) { staffPin = newStaff; localStorage.setItem(STORAGE_STAFF_PIN, newStaff); }
+            if (newAdmin) { adminPin = newAdmin; localStorage.setItem(STORAGE_ADMIN_PIN, newAdmin); }
 
-        function handleSearch() {
-            renderDashboard();
-        }
+            document.getElementById('labelStaffPin').innerText = staffPin;
+            document.getElementById('labelAdminPin').innerText = adminPin;
 
-        function closeModal(id) {
-            document.getElementById(id).classList.add('hidden');
-        }
-
-        function openSettingsModal() {
-            document.getElementById('settingsModal').classList.remove('hidden');
-        }
-
-        function openHostingModal() {
-            document.getElementById('hostingModal').classList.remove('hidden');
-        }
-
-        function updateSecurityPin() {
-            const newPin = document.getElementById('newPinInput').value.trim();
-            if (newPin.length >= 4) {
-                appPin = newPin;
-                localStorage.setItem(STORAGE_PIN_KEY, newPin);
-                alert("Security PIN successfully updated!");
-                closeModal('settingsModal');
-            } else {
-                alert("PIN must be at least 4 characters.");
-            }
+            alert("Security PINs updated successfully!");
+            closeModal('settingsModal');
         }
 
         function updateSyncRoom() {
@@ -1050,35 +743,64 @@
             if (newRoom) {
                 syncRoom = newRoom;
                 localStorage.setItem(STORAGE_ROOM_KEY, newRoom);
-                alert(`Sync Room set to "${newRoom}". Connecting...`);
+                alert(`Sync Room set to "${newRoom}".`);
                 closeModal('settingsModal');
                 initFirebaseSync();
             }
         }
 
         function resetAllTickets() {
-            if (confirm("DANGER: This will reset all 150 tickets to Unsold status! Continue?")) {
+            if (confirm("Reset all 150 tickets to Unsold?")) {
                 tickets = createEmptyTickets();
                 saveTicketsLocally();
+                pushToCloud();
                 closeModal('settingsModal');
             }
         }
 
         function exportCSV() {
-            let csv = "Serial Number,Status,Customer Name,Phone Number,Price (UGX)\n";
-            tickets.forEach(t => {
-                csv += `"${t.sn}","${t.status}","${t.customerName || ''}","${t.customerPhone || ''}",30000\n`;
-            });
-
+            let csv = "Serial Number,Status,Customer Name,Phone Number\n";
+            tickets.forEach(t => { csv += `"${t.sn}","${t.status}","${t.customerName || ''}","${t.customerPhone || ''}"\n`; });
             const blob = new Blob([csv], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
-            a.setAttribute('href', url);
-            a.setAttribute('download', `UNEB_2026_Attendees_${new Date().toISOString().slice(0,10)}.csv`);
+            a.href = window.URL.createObjectURL(blob);
+            a.download = `Attendees_UNEB2026.csv`;
             a.click();
         }
 
+        function printSelectedTicket() {
+            if (selectedIndex === null) return;
+            const t = tickets[selectedIndex];
+            document.getElementById('printSN').innerText = t.sn;
+            document.getElementById('printName').innerText = t.customerName;
+            document.getElementById('printPhone').innerText = t.customerPhone;
+
+            const qrContainer = document.getElementById('qrcodeCanvas');
+            qrContainer.innerHTML = '';
+            new QRCode(qrContainer, { text: `UNEB2026-${t.sn}`, width: 90, height: 90 });
+
+            closeModal('ticketModal');
+            document.getElementById('printModal').classList.remove('hidden');
+        }
+
+        function switchTab(tab) {
+            if (tab === 'grid') {
+                document.getElementById('tabGrid').classList.remove('hidden');
+                document.getElementById('tabList').classList.add('hidden');
+            } else {
+                document.getElementById('tabList').classList.remove('hidden');
+                document.getElementById('tabGrid').classList.add('hidden');
+            }
+        }
+
+        function handleSearch() { renderDashboard(); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+        function openSettingsModal() { document.getElementById('settingsModal').classList.remove('hidden'); }
+        function openGateDeskModal() { document.getElementById('gateDeskModal').classList.remove('hidden'); }
+
         window.onload = function() {
+            document.getElementById('labelStaffPin').innerText = staffPin;
+            document.getElementById('labelAdminPin').innerText = adminPin;
             initTickets();
             renderDashboard();
             lucide.createIcons();
