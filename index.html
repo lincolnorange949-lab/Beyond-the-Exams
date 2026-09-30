@@ -11,7 +11,7 @@
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     
-    <!-- QRCode.js for generating QR codes on tickets -->
+    <!-- QRCode.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
     <!-- Google Fonts -->
@@ -23,10 +23,10 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, onSnapshot, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         window.FirebaseModule = {
-            initializeApp, getAuth, signInAnonymously, getFirestore, doc, onSnapshot, setDoc, updateDoc
+            initializeApp, getAuth, signInAnonymously, getFirestore, doc, onSnapshot, setDoc
         };
     </script>
 
@@ -38,14 +38,11 @@
             color: #f8fafc;
         }
 
-        .heading-font {
-            font-family: 'Space Grotesk', sans-serif;
-        }
+        .heading-font { font-family: 'Space Grotesk', sans-serif; }
 
         .glass-panel {
             background: rgba(15, 23, 42, 0.75);
             backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
             border: 1px solid rgba(255, 255, 255, 0.12);
         }
 
@@ -54,11 +51,6 @@
             backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.08);
             transition: all 0.2s ease-in-out;
-        }
-
-        .glass-card:hover {
-            border-color: rgba(244, 114, 182, 0.4);
-            transform: translateY(-2px);
         }
 
         .tropical-gradient-text {
@@ -77,18 +69,6 @@
             box-shadow: 0 0 20px rgba(225, 29, 72, 0.4);
         }
 
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: rgba(15, 23, 42, 0.6);
-        }
-        ::-webkit-scrollbar-thumb {
-            background: rgba(244, 114, 182, 0.3);
-            border-radius: 4px;
-        }
-
         @media print {
             body * { visibility: hidden; }
             #printableTicketArea, #printableTicketArea * { visibility: visible; }
@@ -98,12 +78,9 @@
 </head>
 <body class="relative min-h-screen pb-12 overflow-x-hidden">
 
-    <!-- 1. MANDATORY SECURITY OVERLAY -->
+    <!-- 1. SECURITY OVERLAY -->
     <div id="securityGate" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-2xl transition-all duration-300">
         <div class="glass-panel w-full max-w-md p-8 rounded-3xl shadow-2xl border border-rose-500/30 text-center relative overflow-hidden">
-            <div class="absolute -top-12 -right-12 w-32 h-32 bg-rose-500/20 rounded-full blur-2xl pointer-events-none"></div>
-            <div class="absolute -bottom-12 -left-12 w-32 h-32 bg-amber-500/20 rounded-full blur-2xl pointer-events-none"></div>
-            
             <div class="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-tr from-rose-500 to-amber-500 p-0.5 shadow-lg flex items-center justify-center">
                 <div class="w-full h-full bg-slate-900 rounded-[14px] flex items-center justify-center">
                     <i data-lucide="shield-lock" class="w-10 h-10 text-amber-400"></i>
@@ -117,17 +94,15 @@
                 <div>
                     <label for="pinInput" class="block text-xs font-medium text-slate-300 uppercase tracking-wider mb-2">Enter Access Security PIN</label>
                     <input type="password" id="pinInput" maxlength="10" placeholder="••••" autofocus required
-                        class="w-full text-center text-3xl font-mono tracking-widest py-3 px-4 bg-slate-900/80 border border-slate-700 rounded-2xl focus:ring-2 focus:ring-rose-500 focus:border-transparent outline-none text-rose-400 placeholder-slate-600">
+                        class="w-full text-center text-3xl font-mono tracking-widest py-3 px-4 bg-slate-900/80 border border-slate-700 rounded-2xl focus:ring-2 focus:ring-rose-500 outline-none text-rose-400 placeholder-slate-600">
                 </div>
                 <p id="pinError" class="text-xs text-rose-400 hidden font-medium flex items-center justify-center gap-1">
-                    <i data-lucide="alert-circle" class="w-4 h-4"></i> Incorrect PIN.
+                    <i data-lucide="alert-circle" class="w-4 h-4"></i> Incorrect PIN. Access Denied.
                 </p>
                 <button type="submit" class="w-full py-3.5 px-6 rounded-2xl tropical-btn text-white font-bold tracking-wide shadow-lg flex items-center justify-center gap-2">
                     <i data-lucide="unlock" class="w-5 h-5"></i> Unlock System
                 </button>
             </form>
-            
-           
         </div>
     </div>
 
@@ -146,7 +121,7 @@
 
             <div class="flex items-center gap-2 sm:gap-4 flex-wrap">
                 <span id="roleBadge" class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-slate-800 text-slate-300 border border-slate-700">
-                    Staff
+                    Staff Access
                 </span>
 
                 <div id="syncStatusBadge" class="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
@@ -166,37 +141,37 @@
         </div>
     </header>
 
-    <!-- MAIN CONTENT AREA -->
+    <!-- MAIN CONTENT -->
     <main class="max-w-7xl mx-auto px-4 lg:px-8 space-y-6">
         
-        <!-- STATS DASHBOARD -->
+        <!-- DASHBOARD STATS -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div class="glass-card p-4 rounded-2xl relative overflow-hidden">
+            <div class="glass-card p-4 rounded-2xl">
                 <div class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Total Tickets</div>
                 <div class="text-2xl sm:text-3xl font-extrabold mt-1 text-white heading-font">150</div>
                 <div class="text-xs text-slate-400 mt-1">SN 0001 - SN 0150</div>
             </div>
 
-            <div class="glass-card p-4 rounded-2xl relative overflow-hidden border-rose-500/20">
+            <div class="glass-card p-4 rounded-2xl border-rose-500/20">
                 <div class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Tickets Sold</div>
                 <div id="statSold" class="text-2xl sm:text-3xl font-extrabold mt-1 text-rose-400 heading-font">0</div>
                 <div id="statRevenue" class="admin-only text-xs text-amber-400 mt-1 font-mono font-semibold">UGX 0</div>
             </div>
 
-            <div class="glass-card p-4 rounded-2xl relative overflow-hidden border-emerald-500/20">
+            <div class="glass-card p-4 rounded-2xl border-emerald-500/20">
                 <div class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Checked-In</div>
                 <div id="statCheckedIn" class="text-2xl sm:text-3xl font-extrabold mt-1 text-emerald-400 heading-font">0</div>
                 <div id="statCheckPercent" class="text-xs text-emerald-300 mt-1 font-medium">0% Capacity</div>
             </div>
 
-            <div class="glass-card p-4 rounded-2xl relative overflow-hidden border-cyan-500/20">
+            <div class="glass-card p-4 rounded-2xl border-cyan-500/20">
                 <div class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Available</div>
                 <div id="statAvailable" class="text-2xl sm:text-3xl font-extrabold mt-1 text-cyan-400 heading-font">150</div>
                 <div class="text-xs text-cyan-300/80 mt-1 font-medium">UGX 30,000 / ticket</div>
             </div>
         </div>
 
-        <!-- TOOLBAR & GATE SEARCH -->
+        <!-- SEARCH TOOLBAR -->
         <div class="glass-panel p-4 rounded-2xl flex flex-wrap items-center justify-between gap-4">
             <div class="flex-1 min-w-[280px] relative">
                 <i data-lucide="search" class="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
@@ -217,7 +192,7 @@
             </div>
         </div>
 
-        <!-- TAB CONTROLS -->
+        <!-- TAB BUTTONS -->
         <div class="flex border-b border-slate-800 gap-4 text-sm font-semibold">
             <button id="tabGridBtn" onclick="switchTab('grid')" class="py-2.5 border-b-2 border-rose-500 text-rose-400 flex items-center gap-2">
                 <i data-lucide="grid" class="w-4 h-4"></i>
@@ -229,12 +204,12 @@
             </button>
         </div>
 
-        <!-- TAB 1: 150-TICKET GRID MATRIX -->
-        <div id="tabGrid" class="space-y-4">
-            <div id="ticketGrid" class="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-15 gap-2"></div>
+        <!-- TAB 1: GRID -->
+        <div id="tabGrid" class="block space-y-4">
+            <div id="ticketGrid" class="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 gap-2"></div>
         </div>
 
-        <!-- TAB 2: ATTENDEE LIST TABLE -->
+        <!-- TAB 2: LIST TABLE -->
         <div id="tabList" class="hidden glass-panel rounded-2xl overflow-hidden border border-slate-800">
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-xs sm:text-sm">
@@ -254,7 +229,7 @@
 
     </main>
 
-    <!-- TICKET DETAILS / SELL MODAL -->
+    <!-- MODAL: SELL / MANAGE TICKET -->
     <div id="ticketModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md hidden">
         <div class="glass-panel w-full max-w-lg p-6 rounded-3xl border border-slate-700 shadow-2xl relative">
             <button onclick="closeModal('ticketModal')" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1">
@@ -280,11 +255,9 @@
                     <input type="tel" id="customerPhone" required placeholder="0770000000"
                         class="w-full py-2.5 px-3.5 bg-slate-900 border border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-rose-500 outline-none">
                 </div>
-                <div class="flex items-center gap-2 pt-2">
-                    <button type="submit" class="flex-1 py-3 rounded-xl tropical-btn text-white font-bold text-sm shadow-md flex items-center justify-center gap-2">
-                        <i data-lucide="check-circle" class="w-4 h-4"></i> Confirm Sale
-                    </button>
-                </div>
+                <button type="submit" class="w-full py-3 rounded-xl tropical-btn text-white font-bold text-sm shadow-md flex items-center justify-center gap-2">
+                    <i data-lucide="check-circle" class="w-4 h-4"></i> Confirm Sale
+                </button>
             </form>
 
             <div id="soldTicketView" class="hidden space-y-4">
@@ -318,7 +291,7 @@
         </div>
     </div>
 
-    <!-- PRINTABLE TICKET MODAL -->
+    <!-- MODAL: PRINT -->
     <div id="printModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md hidden">
         <div class="glass-panel w-full max-w-2xl p-6 rounded-3xl border border-slate-700 shadow-2xl relative">
             <button onclick="closeModal('printModal')" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1">
@@ -348,7 +321,7 @@
         </div>
     </div>
 
-    <!-- GATE CHECK-IN DESK MODAL -->
+    <!-- MODAL: GATE DESK -->
     <div id="gateDeskModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md hidden">
         <div class="glass-panel w-full max-w-lg p-6 rounded-3xl border border-emerald-500/40 shadow-2xl relative">
             <button onclick="closeModal('gateDeskModal')" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1">
@@ -366,7 +339,7 @@
         </div>
     </div>
 
-    <!-- ADMIN SETTINGS MODAL -->
+    <!-- MODAL: ADMIN SETTINGS -->
     <div id="settingsModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md hidden">
         <div class="glass-panel w-full max-w-lg p-6 rounded-3xl border border-slate-700 shadow-2xl relative">
             <button onclick="closeModal('settingsModal')" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1">
@@ -378,7 +351,6 @@
             </h3>
 
             <div class="space-y-6">
-                <!-- Change Security PINs -->
                 <div class="p-4 bg-slate-900/80 rounded-2xl border border-slate-800 space-y-3">
                     <h4 class="text-sm font-bold text-white flex items-center gap-2">
                         <i data-lucide="key" class="w-4 h-4 text-amber-400"></i> Passcode Management
@@ -398,19 +370,6 @@
                     </div>
                 </div>
 
-                <!-- Sync Room -->
-                <div class="p-4 bg-slate-900/80 rounded-2xl border border-slate-800 space-y-3">
-                    <h4 class="text-sm font-bold text-white flex items-center gap-2">
-                        <i data-lucide="cloud-lightning" class="w-4 h-4 text-cyan-400"></i> Shared Sync Room Key
-                    </h4>
-                    <div class="flex gap-2">
-                        <input type="text" id="syncRoomInput" value="BEYOND2026"
-                            class="flex-1 py-2 px-3 bg-slate-950 border border-slate-700 rounded-xl text-sm font-mono uppercase text-cyan-400">
-                        <button onclick="updateSyncRoom()" class="py-2 px-4 bg-cyan-600 text-white text-xs font-bold rounded-xl">Update</button>
-                    </div>
-                </div>
-
-                <!-- Danger Zone -->
                 <div class="p-4 bg-slate-900/80 rounded-2xl border border-slate-800 space-y-3">
                     <h4 class="text-sm font-bold text-rose-400">Danger Zone</h4>
                     <button onclick="resetAllTickets()" class="w-full py-2.5 px-4 bg-rose-500/20 text-rose-300 font-bold text-xs rounded-xl border border-rose-500/30">
@@ -428,25 +387,13 @@
         const STORAGE_ADMIN_PIN = 'uneb2026_admin_pin';
         const STORAGE_STAFF_PIN = 'uneb2026_staff_pin';
         const STORAGE_TICKETS_KEY = 'uneb2026_tickets';
-        const STORAGE_ROOM_KEY = 'uneb2026_room';
 
         let adminPin = localStorage.getItem(STORAGE_ADMIN_PIN) || '2026';
         let staffPin = localStorage.getItem(STORAGE_STAFF_PIN) || '1234';
-        let syncRoom = localStorage.getItem(STORAGE_ROOM_KEY) || 'BEYOND2026';
         
-        let currentRole = null; // 'admin' or 'staff'
+        let currentRole = null;
         let tickets = [];
         let selectedIndex = null;
-        let db = null;
-
-        function initTickets() {
-            const saved = localStorage.getItem(STORAGE_TICKETS_KEY);
-            if (saved) {
-                try { tickets = JSON.parse(saved); } catch(e) { tickets = createEmptyTickets(); }
-            } else {
-                tickets = createEmptyTickets();
-            }
-        }
 
         function createEmptyTickets() {
             const arr = [];
@@ -464,74 +411,28 @@
             return arr;
         }
 
+        function initTickets() {
+            const saved = localStorage.getItem(STORAGE_TICKETS_KEY);
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    if (Array.isArray(parsed) && parsed.length === TOTAL_TICKETS) {
+                        tickets = parsed;
+                    } else {
+                        tickets = createEmptyTickets();
+                    }
+                } catch(e) {
+                    tickets = createEmptyTickets();
+                }
+            } else {
+                tickets = createEmptyTickets();
+            }
+            saveTicketsLocally();
+        }
+
         function saveTicketsLocally() {
             localStorage.setItem(STORAGE_TICKETS_KEY, JSON.stringify(tickets));
             renderDashboard();
-        }
-
-        async function initFirebaseSync() {
-            if (!window.FirebaseModule) return;
-            const { initializeApp, getAuth, signInAnonymously, getFirestore, doc, onSnapshot } = window.FirebaseModule;
-
-            try {
-                const app = initializeApp({ apiKey: "demo", authDomain: "demo.firebaseapp.com", projectId: "demo-app" });
-                const auth = getAuth(app);
-                db = getFirestore(app);
-                await signInAnonymously(auth);
-
-                const docRef = doc(db, 'party_rooms', syncRoom);
-                onSnapshot(docRef, (docSnap) => {
-                    if (docSnap.exists()) {
-                        const data = docSnap.data();
-                        if (data && data.tickets) {
-                            tickets = data.tickets;
-                            localStorage.setItem(STORAGE_TICKETS_KEY, JSON.stringify(tickets));
-                            renderDashboard();
-                            updateSyncBadge(true);
-                        }
-                    } else {
-                        pushToCloud();
-                    }
-                });
-            } catch(e) {
-                updateSyncBadge(false);
-            }
-        }
-
-        async function pushTicketToCloud(singleTicket) {
-            if (!db) return;
-            const { doc, setDoc } = window.FirebaseModule;
-            try {
-                const docRef = doc(db, 'party_rooms', syncRoom);
-                await setDoc(docRef, { tickets }, { merge: true });
-                updateSyncBadge(true);
-            } catch(e) {
-                updateSyncBadge(false);
-            }
-        }
-
-        async function pushToCloud() {
-            if (!db) return;
-            const { doc, setDoc } = window.FirebaseModule;
-            try {
-                const docRef = doc(db, 'party_rooms', syncRoom);
-                await setDoc(docRef, { tickets }, { merge: true });
-                updateSyncBadge(true);
-            } catch(e) {
-                updateSyncBadge(false);
-            }
-        }
-
-        function updateSyncBadge(isLive) {
-            const badge = document.getElementById('syncStatusBadge');
-            const text = document.getElementById('syncText');
-            if (isLive) {
-                badge.className = "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
-                text.innerText = "Live Cloud Sync (" + syncRoom + ")";
-            } else {
-                badge.className = "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20";
-                text.innerText = "Local Storage Mode";
-            }
         }
 
         function handlePinSubmit(e) {
@@ -566,6 +467,7 @@
                 badge.className = "px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-cyan-500/20 text-cyan-300 border border-cyan-500/30";
                 document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
             }
+            switchTab('grid');
             renderDashboard();
         }
 
@@ -583,10 +485,13 @@
 
             const gridContainer = document.getElementById('ticketGrid');
             const tableBody = document.getElementById('attendeeTableBody');
+            
+            if (!gridContainer || !tableBody) return;
+            
             gridContainer.innerHTML = '';
             tableBody.innerHTML = '';
 
-            const filterQuery = document.getElementById('searchInput').value.toLowerCase().trim();
+            const filterQuery = (document.getElementById('searchInput').value || '').toLowerCase().trim();
 
             tickets.forEach((t, index) => {
                 if (t.status === 'sold') soldCount++;
@@ -599,6 +504,7 @@
 
                 if (!matches) return;
 
+                // Grid Item
                 const btn = document.createElement('button');
                 let statusClasses = "bg-slate-900/60 border-slate-800 text-slate-400 hover:border-slate-600";
                 if (t.status === 'sold') statusClasses = "bg-amber-500/20 border-amber-500/50 text-amber-300 font-bold";
@@ -606,9 +512,10 @@
 
                 btn.className = `p-2.5 rounded-xl border text-center transition-all flex flex-col items-center justify-center gap-1 ${statusClasses}`;
                 btn.onclick = () => openTicketModal(index);
-                btn.innerHTML = `<span class="text-[10px] font-mono opacity-70">${t.sn}</span><i data-lucide="${t.status === 'checked-in' ? 'user-check' : t.status === 'sold' ? 'user-x' : 'ticket'}" class="w-4 h-4"></i>`;
+                btn.innerHTML = `<span class="text-[10px] font-mono opacity-80">${t.sn}</span><i data-lucide="${t.status === 'checked-in' ? 'user-check' : t.status === 'sold' ? 'user-x' : 'ticket'}" class="w-4 h-4"></i>`;
                 gridContainer.appendChild(btn);
 
+                // Table Row
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-slate-800/40 transition";
                 tr.innerHTML = `
@@ -625,7 +532,8 @@
             document.getElementById('statRevenue').innerText = `UGX ${(soldCount * TICKET_PRICE).toLocaleString()}`;
             document.getElementById('statCheckedIn').innerText = checkCount;
             document.getElementById('statAvailable').innerText = TOTAL_TICKETS - soldCount;
-            lucide.createIcons();
+            
+            if (window.lucide) lucide.createIcons();
         }
 
         function openTicketModal(index) {
@@ -668,7 +576,6 @@
             tickets[selectedIndex].soldAt = new Date().toISOString();
 
             saveTicketsLocally();
-            pushTicketToCloud(tickets[selectedIndex]);
             closeModal('ticketModal');
         }
 
@@ -679,7 +586,6 @@
             t.checkedInAt = t.status === 'checked-in' ? new Date().toISOString() : null;
 
             saveTicketsLocally();
-            pushTicketToCloud(t);
             openTicketModal(selectedIndex);
         }
 
@@ -688,7 +594,6 @@
             if (confirm(`Void ticket ${tickets[selectedIndex].sn}?`)) {
                 tickets[selectedIndex] = { id: tickets[selectedIndex].id, sn: tickets[selectedIndex].sn, status: 'available', customerName: '', customerPhone: '', soldAt: null, checkedInAt: null };
                 saveTicketsLocally();
-                pushToCloud();
                 closeModal('ticketModal');
             }
         }
@@ -714,7 +619,6 @@
                 target.status = 'checked-in';
                 target.checkedInAt = new Date().toISOString();
                 saveTicketsLocally();
-                pushTicketToCloud(target);
 
                 feedback.className = "p-4 rounded-2xl bg-emerald-500/20 text-emerald-300 font-bold text-sm block";
                 feedback.innerText = `✅ ENTRY APPROVED! Welcome ${target.customerName}`;
@@ -728,29 +632,14 @@
             if (newStaff) { staffPin = newStaff; localStorage.setItem(STORAGE_STAFF_PIN, newStaff); }
             if (newAdmin) { adminPin = newAdmin; localStorage.setItem(STORAGE_ADMIN_PIN, newAdmin); }
 
-            document.getElementById('labelStaffPin').innerText = staffPin;
-            document.getElementById('labelAdminPin').innerText = adminPin;
-
             alert("Security PINs updated successfully!");
             closeModal('settingsModal');
-        }
-
-        function updateSyncRoom() {
-            const newRoom = document.getElementById('syncRoomInput').value.trim().toUpperCase();
-            if (newRoom) {
-                syncRoom = newRoom;
-                localStorage.setItem(STORAGE_ROOM_KEY, newRoom);
-                alert(`Sync Room set to "${newRoom}".`);
-                closeModal('settingsModal');
-                initFirebaseSync();
-            }
         }
 
         function resetAllTickets() {
             if (confirm("Reset all 150 tickets to Unsold?")) {
                 tickets = createEmptyTickets();
                 saveTicketsLocally();
-                pushToCloud();
                 closeModal('settingsModal');
             }
         }
@@ -781,12 +670,25 @@
         }
 
         function switchTab(tab) {
+            const gridTab = document.getElementById('tabGrid');
+            const listTab = document.getElementById('tabList');
+            const gridBtn = document.getElementById('tabGridBtn');
+            const listBtn = document.getElementById('tabListBtn');
+
             if (tab === 'grid') {
-                document.getElementById('tabGrid').classList.remove('hidden');
-                document.getElementById('tabList').classList.add('hidden');
+                gridTab.classList.remove('hidden');
+                gridTab.classList.add('block');
+                listTab.classList.add('hidden');
+                listTab.classList.remove('block');
+                gridBtn.className = "py-2.5 border-b-2 border-rose-500 text-rose-400 flex items-center gap-2";
+                listBtn.className = "py-2.5 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2";
             } else {
-                document.getElementById('tabList').classList.remove('hidden');
-                document.getElementById('tabGrid').classList.add('hidden');
+                listTab.classList.remove('hidden');
+                listTab.classList.add('block');
+                gridTab.classList.add('hidden');
+                gridTab.classList.remove('block');
+                listBtn.className = "py-2.5 border-b-2 border-rose-500 text-rose-400 flex items-center gap-2";
+                gridBtn.className = "py-2.5 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2";
             }
         }
 
@@ -796,12 +698,9 @@
         function openGateDeskModal() { document.getElementById('gateDeskModal').classList.remove('hidden'); }
 
         window.onload = function() {
-            document.getElementById('labelStaffPin').innerText = staffPin;
-            document.getElementById('labelAdminPin').innerText = adminPin;
             initTickets();
             renderDashboard();
-            lucide.createIcons();
-            initFirebaseSync();
+            if (window.lucide) lucide.createIcons();
         };
     </script>
 </body>
